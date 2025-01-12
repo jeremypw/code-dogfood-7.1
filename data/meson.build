@@ -23,8 +23,8 @@ install_data([
 ], install_dir: get_option('datadir') / install_name / 'fonts')
 
 install_data(
-    'io.elementary.code.gschema.xml',
-    'io.elementary.code.plugins.spell.gschema.xml',
+    'com.github.jeremypw.dogfood-code-7.gschema.xml',
+    'com.github.jeremypw.dogfood-code-7.plugins.spell.gschema.xml',
     install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
 )
 
