@@ -17,4 +17,4 @@ Incorporates the following unmerged fixes:
 
 Installs alongside elementary Code and can be run simultaneously for comparison.
 
-The executable of this fork is `com.github.jerempw.dogfood-code-7`
+The executable of this fork is `com.github.jeremypw.dogfood-code-7`
