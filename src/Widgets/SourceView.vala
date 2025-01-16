@@ -666,10 +666,7 @@ namespace Scratch.Widgets {
             if (name == null) {
                 return;
             } else if (name.has_prefix ("NavMark")) {
-                warning ("NavMark deleted");
                 navmark_gutter_renderer.remove_mark (mark);
-            } else {
-                warning ("mark %s deleted", name);
             }
         }
 
@@ -677,10 +674,7 @@ namespace Scratch.Widgets {
             var name = mark.get_name ();
             if (name == null) {
                 return;
-            } else if (name.has_prefix ("NavMark")) {
-                warning ("NavMark set");
             } else {
-                warning ("mark %s set", name);
                 schedule_selection_changed_event ();
             }
         }
