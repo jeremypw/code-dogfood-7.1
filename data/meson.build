@@ -23,7 +23,7 @@ install_data([
 ], install_dir: get_option('datadir') / install_name / 'fonts')
 
 install_data(
-    'com.github.jeremypw.dogfood-code-7.gschema.xml',
+    'com.github.jeremypw.dogfood-code-flatpak-7.gschema.xml',
     'com.github.jeremypw.dogfood-code-7.plugins.spell.gschema.xml',
     install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
 )
@@ -32,9 +32,9 @@ config_data = configuration_data()
 config_data.set('EXEC_NAME', install_name)
 
 if (branch != '')
-    config_data.set('NAME', 'Dogfood Code 7 - ' + branch)
+    config_data.set('NAME', 'Dogfood Code Flatpak 7 - ' + branch)
 else
-    config_data.set('NAME', 'Dogfood Code 7')
+    config_data.set('NAME', 'Dogfood Code Flatpak 7')
 endif
 
 # Set the executable name and translate the desktop files
@@ -66,23 +66,6 @@ config_data = configuration_data()
 config_data.set('install_prefix', get_option('prefix'))
 config_data.set('bin_dir', get_option('bindir'))
 config_data.set('exec_name', install_name)
-
-if get_option ('have_pkexec')
-    policy_in = configure_file(
-        input: 'code.policy.in.in',
-        output:  install_name + '.policy.in',
-        configuration: config_data,
-        install: false,
-    )
-
-    i18n.merge_file(
-        input: policy_in,
-        output: install_name + '.policy',
-        po_dir: meson.project_source_root () / 'po' / 'extra',
-        install: true,
-        install_dir: get_option('datadir') / 'polkit-1' / 'actions',
-    )
-endif
 
 install_man(
     'io.elementary.code.1'

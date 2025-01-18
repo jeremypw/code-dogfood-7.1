@@ -5,24 +5,24 @@
   <_description>Color scheme using the elementary color palette</_description>
 
   <!-- Background Colors Palette -->
-  <color name="bg-0"  value="#fbf7f0"/> <!-- LATTE100 WHITE MIX 25% -->
-  <color name="bg-1"  value="#f7efe1"/> <!-- LATTE100 WHITE MIX 50% -->
-  <color name="bg-2"  value="#f3e7d3"/> <!-- LATTE100 WHITE MIX 75% -->
-  <color name="bg-3"  value="#f1e2ca"/> <!-- LATTE100 WHITE MIX 90% -->
-  <color name="bg-4"  value="#efdfc4"/> <!-- LATTE100 -->
+  <color name="bg-0"  value="#ebf7f0"/> <!-- LATTE100 WHITE MIX 25% -->
+  <color name="bg-1"  value="#e7efe1"/> <!-- LATTE100 WHITE MIX 50% -->
+  <color name="bg-2"  value="#e3e7d3"/> <!-- LATTE100 WHITE MIX 75% -->
+  <color name="bg-3"  value="#e1e2ca"/> <!-- LATTE100 WHITE MIX 90% -->
+  <color name="bg-4"  value="#dfdfc4"/> <!-- LATTE100 -->
 
-  <color name="fg-0"   value="#555761"/> <!-- SILVER900 -->
-  <color name="fg-1"   value="#7e8087"/> <!-- SILVER700 -->
-  <color name="fg-2"   value="#abacae"/> <!-- SILVER300 -->
+  <color name="fg-0"   value="#455761"/> <!-- SILVER900 -->
+  <color name="fg-1"   value="#6e8087"/> <!-- SILVER700 -->
+  <color name="fg-2"   value="#9bacae"/> <!-- SILVER300 -->
 
-  <color name="yellow"  value="#d48e15"/> <!-- BANANA700 -->
-  <color name="orange"  value="#cc3b02"/> <!-- ORANGE700 -->
-  <color name="red"     value="#c6262e"/> <!-- STRAWBERRY500 -->
-  <color name="pink"    value="#bc245d"/> <!-- BUBBLEGUM700 -->
-  <color name="purple"  value="#a56de2"/> <!-- GRAPE500 -->
-  <color name="blue"    value="#3689e6"/> <!-- BLUEBERRY500 -->
-  <color name="cyan"    value="#0e9a83"/> <!-- MINT700 -->
-  <color name="green"   value="#68b723"/> <!-- LIME500 -->
+  <color name="yellow"  value="#c48e15"/> <!-- BANANA700 -->
+  <color name="orange"  value="#bc3b02"/> <!-- ORANGE700 -->
+  <color name="red"     value="#b6262e"/> <!-- STRAWBERRY500 -->
+  <color name="pink"    value="#ac245d"/> <!-- BUBBLEGUM700 -->
+  <color name="purple"  value="#956de2"/> <!-- GRAPE500 -->
+  <color name="blue"    value="#2689e6"/> <!-- BLUEBERRY500 -->
+  <color name="cyan"    value="#0e8a83"/> <!-- MINT700 -->
+  <color name="green"   value="#58b723"/> <!-- LIME500 -->
 
   <!-- Global Settings -->
   <style name="text"                        foreground="fg-0" background="bg-1"/>

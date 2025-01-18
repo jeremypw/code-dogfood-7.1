@@ -1,7 +1,7 @@
-# Dogfood-code-7
+# Dogfood-code-flatpak-7
 
-A fork of Elementary Code incorporating various experimental changes not merged in the original.
-For testing purposes only.
+A fork of Elementary Code incorporating various experimental changes not merged in the original, packaged
+as a Flatpak. For testing purposes only.
 
 Incorporates the following unmerged fixes:
 
@@ -13,8 +13,9 @@ Incorporates the following unmerged fixes:
  - https://github.com/elementary/code/pull/1489
  - https://github.com/elementary/code/pull/1491
  - https://github.com/elementary/code/pull/1504
+ - https://github.com/elementary/code/pull/1509
 
 
 Installs alongside elementary Code and can be run simultaneously for comparison.
 
-The executable of this fork is `com.github.jeremypw.dogfood-code-7`
+The executable of this branch is `com.github.jeremypw.dogfood-code-flatpak-7`

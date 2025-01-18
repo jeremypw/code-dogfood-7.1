@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
 Name=@NAME@
-Comment=Dogfood Code editor on eOS7
-GenericName=Experimental Code Editor
+Comment=Dogfood Code editor as Flatpak on eOS7
+GenericName=Experimental Flatpak Code Editor
 Exec=@EXEC_NAME@ %U
-Icon=missing-image
+Icon=com.github.jeremypw.dogfood-code-flatpak-7.svg
 Terminal=false
 Categories=Development;GTK;IDE;WebDevelopment;
 Keywords=text;IDE;scratch;code;

@@ -75,7 +75,7 @@ executable(
 )
 
 dogfood_code_core = library(
-    'dogfood_code_core',
+    'dogfood_code_flatpak_core',
     code_files,
     config_header,
     dependencies: dependencies,
@@ -90,7 +90,7 @@ pkg.generate(
     version: '0.1',
     libraries: dogfood_code_core,
     description: 'experimental Code headers',
-    name: 'dogfood_code_core',
+    name: 'dogfood_code_flatpak_core',
     filebase: 'dogfood_code_core'
 )
 

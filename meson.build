@@ -7,7 +7,7 @@ project(
 )
 
 # Install under different name so may be run alongside original
-install_name = 'com.github.jeremypw.dogfood-code-7'
+install_name = 'com.github.jeremypw.dogfood-code-flatpak-7'
 
 add_project_arguments([
         '-DGETTEXT_PACKAGE="@0@"'.format(install_name)
