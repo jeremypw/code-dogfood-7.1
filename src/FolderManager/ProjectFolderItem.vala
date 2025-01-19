@@ -124,11 +124,10 @@ namespace Scratch.FolderManager {
         }
 
         public override Gtk.Menu? get_context_menu () {
-            GLib.FileInfo info = null;
             unowned string? file_type = null;
 
             try {
-                info = file.file.query_info (GLib.FileAttribute.STANDARD_CONTENT_TYPE, GLib.FileQueryInfoFlags.NONE);
+                var info = file.file.query_info (GLib.FileAttribute.STANDARD_CONTENT_TYPE, GLib.FileQueryInfoFlags.NONE);
                 file_type = info.get_content_type ();
             } catch (Error e) {
                 warning (e.message);
