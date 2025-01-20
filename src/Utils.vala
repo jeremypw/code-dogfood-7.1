@@ -207,7 +207,6 @@ namespace Scratch.Utils {
         var menu = new GLib.Menu ();
 
         if (scratch_app.is_running_in_flatpak) {
-            warning ("running in Flatpak");
             var menu_item = new MenuItem (
                 ///TRANSLATORS '%s' represents the quoted basename of a uri to be opened with the default app
                 _("Show '%s' with default app").printf (file.get_basename ()),
@@ -222,9 +221,13 @@ namespace Scratch.Utils {
             );
             menu.append_item (menu_item);
         } else {
-            List<AppInfo> external_apps = GLib.AppInfo.get_all_for_type (file_type);
-            var files_appinfo = AppInfo.get_default_for_type ("inode/directory", true);
-            external_apps.prepend (files_appinfo);
+            List<AppInfo> external_apps = null;
+            if (file_type == "") {
+                var files_appinfo = AppInfo.get_default_for_type ("inode/directory", true);
+                external_apps.prepend (files_appinfo);
+            } else {
+                external_apps = GLib.AppInfo.get_all_for_type (file_type);
+            }
 
             foreach (AppInfo app_info in external_apps) {
                 string app_id = app_info.get_id ();
