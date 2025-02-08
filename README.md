@@ -1,4 +1,4 @@
-# Dogfood-code-7
+# Dogfood-code-flatpak-7
 ![Screenshot](data/screenshot.png?raw=true)
 
 ## Building, Testing, and Installation
@@ -25,7 +25,7 @@ Run `meson build` to configure the build environment. Change to the build direct
     cd build
     ninja test
 
-To install, use `ninja install`, then execute with `com.github.jeremypw.dogfood-code-7`
+To install, use `ninja install`, then execute with `com.github.jeremypw.dogfood-code-flatpak-7`
 
     sudo ninja install
-    com.github.jeremypw.dogfood-code-7
+    com.github.jeremypw.dogfood-code-flatpak-7

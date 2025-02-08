@@ -29,12 +29,12 @@ install_data(
 )
 
 config_data = configuration_data()
-config_data.set('EXEC_NAME', install_name)
+config_data.set('EXEC_NAME', 'flatpak run ' + install_name)
 
 if (branch != '')
-    config_data.set('NAME', 'Dogfood Code 7 - ' + branch)
+    config_data.set('NAME', 'Dogfood Code 7 (Flatpak) - ' + branch)
 else
-    config_data.set('NAME', 'Dogfood Code 7')
+    config_data.set('NAME', 'Dogfood Code 7 (Flatpak)')
 endif
 
 # Set the executable name and translate the desktop files

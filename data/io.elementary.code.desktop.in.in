@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=@NAME@
-Comment=Dogfood Code editor on eOS7
+Comment=Dogfood Code editor (Flatpak) on eOS7
 GenericName=Experimental Code Editor
 Exec=@EXEC_NAME@ %U
 Icon=missing-image
