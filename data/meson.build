@@ -1,65 +1,71 @@
 icon_sizes = ['16', '24', '32', '48', '64', '128']
 
 foreach i : icon_sizes
-    install_data(
-        'icons' / i + '.svg',
-        install_dir: get_option('datadir') / 'icons' / 'hicolor' / i + 'x' + i / 'apps',
-        rename: install_name + '.svg'
-    )
-    install_data(
-        'icons' / i + '.svg',
-        install_dir: get_option('datadir') / 'icons' / 'hicolor' / i + 'x' + i + '@2' / 'apps',
-        rename: install_name + '.svg'
-    )
+install_data(
+    'icons' / i + '.svg',
+    install_dir: get_option('datadir') / 'icons' / 'hicolor' / i + 'x' + i / 'apps',
+    rename: install_name + '.svg'
+)
+install_data(
+    'icons' / i + '.svg',
+    install_dir: get_option('datadir') / 'icons' / 'hicolor' / i + 'x' + i + '@2' / 'apps',
+    rename: install_name + '.svg'
+)
 endforeach
 
 install_data([
-  'styles/elementary-dark.xml',
-  'styles/elementary-light.xml',
+'styles/elementary-dark.xml',
+'styles/elementary-light.xml',
 ], install_dir: get_option('datadir') / 'gtksourceview-4' / 'styles')
 
 install_data([
-  'fonts/BuilderBlocks.ttf',
+'fonts/BuilderBlocks.ttf',
 ], install_dir: get_option('datadir') / install_name / 'fonts')
 
 install_data(
     'io.elementary.code.gschema.xml',
+    install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas',
+    rename: install_name + '.gschema.xml'
+)
+
+install_data(
     'io.elementary.code.plugins.spell.gschema.xml',
-    install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas'
+    install_dir: get_option('prefix') / get_option('datadir') / 'glib-2.0' / 'schemas',
+    rename: install_name + '.plugins.spell.gschema.xml'
 )
 
 config_data = configuration_data()
-config_data.set('EXEC_NAME', 'flatpak run ' + install_name)
+config_data.set('EXEC_NAME', install_name)
 
 if (branch != '')
-    config_data.set('NAME', 'Dogfood Code 7 (Flatpak) - ' + branch)
+config_data.set('NAME', 'Dogfood Code Flatpak 7 - ' + branch)
 else
-    config_data.set('NAME', 'Dogfood Code 7 (Flatpak)')
+config_data.set('NAME', 'Dogfood Code Flatpak 7')
 endif
 
 # Set the executable name and translate the desktop files
 desktop_in_file = configure_file(
-    input: 'io.elementary.code.desktop.in.in',
-    output: '@BASENAME@',
-    configuration: config_data
+input: 'io.elementary.code.desktop.in.in',
+output: '@BASENAME@',
+configuration: config_data
 )
 
 desktop_file = i18n.merge_file(
-    input: desktop_in_file,
-    output: install_name + '.desktop',
-    po_dir: meson.project_source_root () / 'po' / 'extra',
-    type: 'desktop',
-    install_dir: get_option('datadir') / 'applications',
-    install: true
+input: desktop_in_file,
+output: install_name + '.desktop',
+po_dir: meson.project_source_root () / 'po' / 'extra',
+type: 'desktop',
+install_dir: get_option('datadir') / 'applications',
+install: true
 )
 
 i18n.merge_file(
-    input: 'code.metainfo.xml.in',
-    output: install_name + '.metainfo.xml',
-    po_dir: meson.project_source_root() / 'po' / 'extra',
-    type: 'xml',
-    install: true,
-    install_dir: get_option('datadir') / 'metainfo',
+input: 'code.metainfo.xml.in',
+output: install_name + '.metainfo.xml',
+po_dir: meson.project_source_root() / 'po' / 'extra',
+type: 'xml',
+install: true,
+install_dir: get_option('datadir') / 'metainfo',
 )
 
 config_data = configuration_data()
@@ -67,23 +73,6 @@ config_data.set('install_prefix', get_option('prefix'))
 config_data.set('bin_dir', get_option('bindir'))
 config_data.set('exec_name', install_name)
 
-if get_option ('have_pkexec')
-    policy_in = configure_file(
-        input: 'code.policy.in.in',
-        output:  install_name + '.policy.in',
-        configuration: config_data,
-        install: false,
-    )
-
-    i18n.merge_file(
-        input: policy_in,
-        output: install_name + '.policy',
-        po_dir: meson.project_source_root () / 'po' / 'extra',
-        install: true,
-        install_dir: get_option('datadir') / 'polkit-1' / 'actions',
-    )
-endif
-
 install_man(
-    'io.elementary.code.1'
+'io.elementary.code.1'
 )

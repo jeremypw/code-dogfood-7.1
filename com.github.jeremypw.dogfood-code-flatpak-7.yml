@@ -15,7 +15,7 @@ finish-args:
   - '--talk-name=org.gnome.SettingsDaemon'
   - '--talk-name=org.elementary.Contractor'
 
-  - '--metadata=X-DConf=migrate-path=/io/elementary/code/'
+  - '--metadata=X-DConf=migrate-path=/com/github/jeremypw/dogfood-code-flatpak-7/'
 cleanup:
   - '/include'
   - '/lib/pkgconfig'
@@ -122,7 +122,7 @@ modules:
         url: https://github.com/universal-ctags/ctags.git
         tag: v6.0.0
 
-  - name: code
+  - name: com.github.jeremypw.dogfood-code-flatpak-7
     buildsystem: meson
     config-opts:
      - '-Dhave_pkexec=false'
