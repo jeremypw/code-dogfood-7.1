@@ -6,35 +6,36 @@
  */
 
 public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
-    public FolderManager.ProjectFolderItem? active_project { get; construct; }
     public bool can_clone { get; private set; default = false; }
 
 
-    //Taken from "switchboard-plug-parental-controls/src/plug/Views/InternetView.vala"
-    private const string NAME_REGEX = "^[0-9a-zA-Z_-]+$";
-    private const string URL_REGEX = "([^/w.])[-a-zA-Z0-9@:%._\\+~#=]{2,256}\\.[a-z]{1,3}([^/])\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*\\b)";
+    // Git project name rules according to GitLab
+    // - Must start and end with a letter ( a-zA-Z ) or digit ( 0-9 ).
+    // - Can contain only letters ( a-zA-Z ), digits ( 0-9 ), underscores ( _ ), dots ( . ), or dashes ( - ).
+    // - Must not contain consecutive special characters.
+    // - Cannot end in . git or . atom .
+
+    private const string NAME_REGEX = """^[0-9a-zA-Z].([-_.]?[0-9a-zA-Z])*$"""; //TODO additional validation required
     private Regex name_regex;
-    private Regex url_regex;
     private Gtk.Label clone_parent_folder_label;
     private Granite.ValidatedEntry remote_repository_uri_entry;
     private Granite.ValidatedEntry local_project_name_entry;
-    private Gtk.CheckButton set_as_active_check;
 
     public string suggested_local_folder { get; construct; }
 
     public CloneRepositoryDialog (string _suggested_local_folder) {
         Object (
-            transient_for: ((Gtk.Application)(GLib.Application.get_default ())).get_active_window (),
-            image_icon: new ThemedIcon ("git"),
-            modal: true,
             suggested_local_folder: _suggested_local_folder
         );
     }
 
     construct {
+        transient_for = ((Gtk.Application)(GLib.Application.get_default ())).get_active_window ();
+        image_icon = new ThemedIcon ("git");
+        modal = true;
+
         try {
-            name_regex = new Regex (NAME_REGEX, RegexCompileFlags.OPTIMIZE);
-            url_regex = new Regex (URL_REGEX, RegexCompileFlags.OPTIMIZE);
+            name_regex = new Regex (NAME_REGEX, OPTIMIZE, ANCHORED | NOTEMPTY);
         } catch (RegexError e) {
             warning ("%s\n", e.message);
         }
@@ -46,10 +47,11 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
         secondary_text = _("The source repository and local folder must exist and have the required read and write permissions");
         badge_icon = new ThemedIcon ("emblem-downloads");
 
-        remote_repository_uri_entry = new Granite.ValidatedEntry.from_regex (url_regex) {
-            input_purpose = URL,
-            placeholder_text = _("https://example.com/username/projectname.git")
+        remote_repository_uri_entry = new Granite.ValidatedEntry () {
+            placeholder_text = _("https://example.com/username/projectname.git"),
+            input_purpose = URL
         };
+        remote_repository_uri_entry.changed.connect (on_remote_uri_changed);
 
         // The suggested folder is assumed to be valid as it is generated internally
         clone_parent_folder_label = new Gtk.Label (suggested_local_folder) {
@@ -86,18 +88,13 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
 
         });
 
-        local_project_name_entry = new Granite.ValidatedEntry.from_regex (name_regex);
-
-        set_as_active_check = new Gtk.CheckButton.with_label (_("Set as Active Project")) {
-            margin_top = 12,
-            active = true
-        };
+        local_project_name_entry = new Granite.ValidatedEntry ();
+        local_project_name_entry.changed.connect (validate_local_name);
 
         var content_box = new Gtk.Box (VERTICAL, 12);
         content_box.add (new CloneEntry (_("Repository URL"), remote_repository_uri_entry));
         content_box.add (new CloneEntry (_("Location"), folder_chooser_button));
         content_box.add (new CloneEntry (_("Name of Clone"), local_project_name_entry));
-        content_box.add (set_as_active_check);
         content_box.show_all ();
 
         custom_bin.add (content_box);
@@ -107,12 +104,11 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
         clone_button.has_default = true;
         clone_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
 
-        remote_repository_uri_entry.notify["is-valid"].connect (on_is_valid_changed);
+        bind_property ("can-clone", clone_button, "sensitive", DEFAULT | SYNC_CREATE);
 
-        clone_button.sensitive = can_clone;
-        bind_property ("can-clone", clone_button, "sensitive");
-
-        on_is_valid_changed ();
+        //Do not want to connect to "is-valid" property notification as this gets changed to "true" every time the entry
+        //text changed. So call explicitly after we validate the text.
+        can_clone = false;
 
         // Focus cancel button so that entry placeholder text shows
         cancel_button.grab_focus ();
@@ -128,34 +124,76 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
     }
 
     public string get_local_name () requires (can_clone) {
-        var local_name = local_project_name_entry.text;
-        if (local_name == "") {
-            var uri_string = remote_repository_uri_entry.text;
-            string? scheme, userinfo, host, path, query,fragment;
-            int port;
-            try {
-                Uri.split (
-                    uri_string,
-                    UriFlags.PARSE_RELAXED,
-                    out scheme, out userinfo, out host, out port, out path, out query, out fragment
-                );
-
-                if (path.has_suffix (".git")) {
-                    path = path.slice (0, -4);
-                }
-
-                local_name = Path.get_basename (path);
-            } catch (UriError e) {
-                warning ("Could not parse remote uri");
-                can_clone = false;
-            }
-        }
-
-        return local_name;
+        return local_project_name_entry.text;
     }
 
-    private void on_is_valid_changed () {
-        can_clone = remote_repository_uri_entry.is_valid;
+    private void update_can_clone () {
+        can_clone = remote_repository_uri_entry.is_valid && local_project_name_entry.is_valid;
+        // We can assume the folder entry is valid as it defaults to a valid folder and
+        // can only be changed with the filechooser.
+    }
+
+    private void on_remote_uri_changed (Gtk.Editable source) {
+        var entry = (Granite.ValidatedEntry)source;
+        if (entry.is_valid) { //entry is a URL
+            //Only accept HTTPS url atm but may also accept ssh address in future
+            entry.is_valid = validate_https_address (entry.text);
+        }
+
+        update_can_clone ();
+    }
+
+    private bool validate_https_address (string address) {
+        var valid = false;
+        string? scheme, userinfo, host, path, query, fragment;
+        int port;
+        try {
+            Uri.split (
+                address,
+                UriFlags.NONE,
+                out scheme,
+                out userinfo,
+                out host,
+                out port,
+                out path,
+                out query,
+                out fragment
+            );
+
+            if (query == null &&
+                fragment == null &&
+                scheme == "https" &&
+                host != null && //e.g. github.com
+                userinfo == null &&  //User is first part of pat
+                (port < 0 || port == 443)) { //TODO Allow non-standard port to be selected
+
+                if (path.has_prefix (Path.DIR_SEPARATOR_S)) {
+                    path = path.substring (1, -1);
+                }
+
+                var parts = path.split (Path.DIR_SEPARATOR_S);
+                valid = parts.length == 2 && parts[1].has_suffix (".git");
+                if (valid) {
+                    local_project_name_entry.text = parts[1].slice (0, -4);
+                }
+            }
+        } catch (UriError e) {
+            warning ("Uri split error %s", e.message);
+        }
+
+        return valid;
+    }
+
+    private void validate_local_name () {
+        unowned var name = local_project_name_entry.text;
+        MatchInfo? match_info;
+        bool valid = false;
+        if (name_regex.match (name, ANCHORED | NOTEMPTY, out match_info) && match_info.matches ()) {
+            valid = !name.has_suffix (".git") && !name.has_suffix (".atom");
+        }
+
+        local_project_name_entry.is_valid = valid;
+        update_can_clone ();
     }
 
     private class CloneEntry : Gtk.Box {
