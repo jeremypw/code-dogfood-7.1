@@ -120,6 +120,7 @@ namespace Scratch.Services {
             return build_path;
         }
 
+        //TODO Make this a real async function that does not block the main loop.
         public async bool clone_repository (
             string uri,
             string local_folder,
@@ -129,6 +130,7 @@ namespace Scratch.Services {
 
             var fetch_options = new Ggit.FetchOptions ();
             fetch_options.set_download_tags (Ggit.RemoteDownloadTagsType.UNSPECIFIED);
+            //TODO Set callbacks for authentification and progress
             fetch_options.set_remote_callbacks (null);
 
             var clone_options = new Ggit.CloneOptions ();

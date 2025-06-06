@@ -1046,40 +1046,65 @@ namespace Scratch {
                 return;
             }
 
-            var default_folder = git_manager.active_project_path != "" ?
-                                 Path.get_dirname (git_manager.active_project_path) : "";
-            var clone_dialog = new Dialogs.CloneRepositoryDialog (default_folder);
+            var default_projects_folder = Scratch.settings.get_string ("default-projects-folder");
+            if (default_projects_folder == "" && git_manager.active_project_path != "") {
+                default_projects_folder = Path.get_dirname (git_manager.active_project_path);
+            }
+
+            var default_remote = Scratch.settings.get_string ("default-remote");
+            var clone_dialog = new Dialogs.CloneRepositoryDialog (default_projects_folder, default_remote);
             clone_dialog.response.connect ((res) => {
-                var uri = clone_dialog.get_source_repository_uri ();
-                var local_folder = clone_dialog.get_local_folder ();
-                var local_name = clone_dialog.get_local_name ();
-                var can_clone = clone_dialog.can_clone;
-                // MainWindow should provide feedback on cloning progress - close modal dialog now
-                clone_dialog.destroy ();
-                if (res == Gtk.ResponseType.APPLY && can_clone) { // Should not need second test?
-                    //TODO Show progress while cloning
-                    cloning_progress_dialog = new Scratch.Dialogs.CloningProgressDialog (this, uri, local_folder);
+                // Persist last entries (not necessarily valid)
+                Scratch.settings.set_string ("default-remote", clone_dialog.get_remote ());
+                Scratch.settings.set_string ("default-projects-folder", clone_dialog.get_projects_folder ());
+                // MainWindow should provide feedback on cloning progress
+                // Hide clone dialog in case needed to retry
+                clone_dialog.hide ();
+                if (res == Gtk.ResponseType.APPLY && clone_dialog.can_clone) { // Should not need second test?
+                    var uri = clone_dialog.get_valid_source_repository_uri ();
+                    var target = clone_dialog.get_valid_target ();
+                    //Show progress while cloning
+                    cloning_progress_dialog = new Scratch.Dialogs.CloningProgressDialog (this, uri, target);
                     cloning_progress_dialog.response.connect ((res) => {
                         cloning_progress_dialog.destroy ();
                         cloning_progress_dialog = null;
                     });
                     cloning_progress_dialog.present ();
 
-                    //Need tiimout in order for dialog to be drawn else cloning blocks it.
-                    //TODO Find a more elegant way
                     Timeout.add (500, () => {
                         git_manager.clone_repository.begin (
                             uri,
-                            Path.build_filename (Path.DIR_SEPARATOR_S, local_folder, local_name),
+                            target,
                             (obj, res) => {
-                                File? workdir = null;
-                                if (git_manager.clone_repository.end (res, out workdir)) {
-                                    debug ("Repository cloned into %s", workdir.get_uri ());
-                                    //TODO Optionally open folder from progress dialog?
-                                    open_folder (workdir);
+                                try {
+                                    File? workdir = null;
+                                    if (git_manager.clone_repository.end (res, out workdir)) {
+                                        debug ("Repository cloned into %s", workdir.get_uri ());
+                                        //TODO Optionally open folder from progress dialog?
+                                        open_folder (workdir);
+                                        clone_dialog.destroy ();
+                                    }
+                                } catch (Error e) {
+                                    var message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
+                                        "Uanble to clone %s".printf (uri),
+                                        e.message,
+                                        "dialog-error",
+                                        Gtk.ButtonsType.CLOSE
+                                    );
+                                    message_dialog.add_button (_("Retry"), 1);
+                                    message_dialog.response.connect ((res) => {
+                                        if (res == 1) {
+                                            clone_dialog.show ();
+                                        } else {
+                                            clone_dialog.destroy ();
+                                        }
+                                        message_dialog.destroy ();
+                                    });
+                                    message_dialog.present ();
                                 }
                             }
                         );
+
                         return Source.REMOVE;
                     });
                 }
