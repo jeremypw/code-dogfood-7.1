@@ -85,6 +85,6 @@ if get_option ('have_pkexec')
     )
 endif
 
-install_man(
-    'io.elementary.code.1'
-)
+# install_man(
+#     'com.github.jeremypw.code-testing.1'
+# )

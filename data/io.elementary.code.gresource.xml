@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/io/elementary/code">
+  <gresource prefix="/com/github/jeremypw/code-testing">
     <file alias="Application.css" compressed="true">Application.css</file>
     <file alias="git.svg" compressed="true" preprocess="xml-stripblanks">icons/48/git.svg</file>
     <file alias="lang-class-abstract.svg" compressed="true" preprocess="xml-stripblanks">icons/SymbolOutline/abstractclass.svg</file>
@@ -29,7 +29,7 @@
     <file alias="scalable/actions/panel-right-rtl-symbolic.svg" compressed="true" preprocess="xml-stripblanks">icons/panel-right-rtl-symbolic.svg</file>
     <file alias="scalable/actions/panel-right-symbolic.svg" compressed="true" preprocess="xml-stripblanks">icons/panel-right-symbolic.svg</file>
   </gresource>
-  <gresource prefix="/io/elementary/code/icons">
+  <gresource prefix="/com/github/jeremypw/code-testing/icons">
     <file alias="48x48/actions/open-project.svg" compressed="true" preprocess="xml-stripblanks">icons/48/open-project.svg</file>
     <file alias="scalable/actions/filter-symbolic.svg" compressed="true" preprocess="xml-stripblanks">icons/filter-symbolic.svg</file>
     <file alias="scalable/emblems/emblem-git-modified-symbolic.svg" compressed="true" preprocess="xml-stripblanks">icons/emblem-git-modified-symbolic.svg</file>
