@@ -33,9 +33,9 @@ config_data = configuration_data()
 config_data.set('EXEC_NAME', meson.project_name())
 
 if (branch != '')
-    config_data.set('NAME', 'Code - ' + branch)
+    config_data.set('NAME', 'Code Testing - ' + branch)
 else
-    config_data.set('NAME', 'Code')
+    config_data.set('NAME', 'Code Testing')
 endif
 
 # Set the executable name and translate the desktop files
@@ -85,6 +85,6 @@ if get_option ('have_pkexec')
     )
 endif
 
-install_man(
-    'io.elementary.code.1'
-)
+# install_man(
+#     'com.github.jeremypw.code-testing.1'
+# )

@@ -249,15 +249,15 @@ namespace Scratch {
             action_accelerators.set (ACTION_RESTORE_PROJECT_DOCS + "::", "<Control><Shift>r");
 
             var provider = new Gtk.CssProvider ();
-            provider.load_from_resource ("io/elementary/code/Application.css");
+            provider.load_from_resource ("com/github/jeremypw/code-testing/Application.css");
             Gtk.StyleContext.add_provider_for_screen (
                 Gdk.Screen.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
             );
 
             if (Constants.BRANCH != "") {
-                base_title = _("Code (%s)").printf (Constants.BRANCH);
+                base_title = _("Code Testing (%s)").printf (Constants.BRANCH);
             } else {
-                base_title = _("Code");
+                base_title = _("Code Testing");
             }
 
             Hdy.init ();
@@ -269,7 +269,7 @@ namespace Scratch {
             title = base_title;
 
             weak Gtk.IconTheme default_theme = Gtk.IconTheme.get_default ();
-            default_theme.add_resource_path ("/io/elementary/code");
+            default_theme.add_resource_path ("/com/github/jeremypw/code-testing");
 
             document_manager = Scratch.Services.DocumentManager.get_instance ();
             git_manager = Services.GitManager.get_instance ();

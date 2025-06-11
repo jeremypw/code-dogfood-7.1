@@ -1,8 +1,8 @@
-app-id: io.elementary.code
+app-id: com.github.jeremypw.code-testing
 runtime: io.elementary.Sdk # The outline plugin requires libvala which is only in the SDK, not the runtime
 runtime-version: '7.1'
 sdk: io.elementary.Sdk
-command: io.elementary.code
+command: com.github.jeremypw.code-testing
 finish-args:
   - '--filesystem=xdg-run/gvfsd'
   - '--filesystem=host'
@@ -16,7 +16,7 @@ finish-args:
   - '--talk-name=org.gnome.SettingsDaemon'
   - '--talk-name=org.elementary.Contractor'
 
-  - '--metadata=X-DConf=migrate-path=/io/elementary/code/'
+  - '--metadata=X-DConf=migrate-path=/com/github/jeremypw/code-testing/'
 cleanup:
   - '/include'
   - '/lib/pkgconfig'
