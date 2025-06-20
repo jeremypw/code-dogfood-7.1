@@ -2,7 +2,7 @@ project(
     'com.github.jeremypw.code-testing',
     'vala', 'c',
     meson_version: '>= 0.58.0',
-    version: '7.4.0'
+    version: '8.0.0'
 )
 
 original_project_name = 'io.elementary.code'
