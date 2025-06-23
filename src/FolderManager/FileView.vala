@@ -124,7 +124,7 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
             }
         }
         //Make remaining project the active one
-        set_project_active (path);
+        set_active_project (path);
     }
 
     private void action_set_project_active (SimpleAction action, GLib.Variant? parameter) {
@@ -142,14 +142,7 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
             return null;
         }
 
-        set_project_active (path);
-    }
-
-    private void set_project_active (string path) {
-        toplevel_action_group.activate_action (
-            MainWindow.ACTION_SET_ACTIVE_PROJECT,
-            new Variant.string (path)
-        );
+        git_manager.active_project_path = path;
 
         write_settings ();
 
