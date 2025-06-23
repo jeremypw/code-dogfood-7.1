@@ -209,6 +209,7 @@ namespace Scratch {
             action_accelerators.set (ACTION_FIND_PREVIOUS, "<Control><shift>g");
             action_accelerators.set (ACTION_FIND_GLOBAL + "::", "<Control><shift>f");
             action_accelerators.set (ACTION_OPEN, "<Control>o");
+            action_accelerators.set (ACTION_OPEN_FOLDER, "<Control><Shift>o");
             action_accelerators.set (ACTION_REVERT, "<Control><shift>o");
             action_accelerators.set (ACTION_SAVE, "<Control>s");
             action_accelerators.set (ACTION_SAVE_AS, "<Control><shift>s");
@@ -1052,8 +1053,8 @@ namespace Scratch {
                 Scratch.settings.set_string ("default-projects-folder", clone_dialog.get_projects_folder ());
                 // MainWindow should provide feedback on cloning progress
                 // Hide clone dialog in case needed to retry
-                clone_dialog.hide ();
                 if (res == Gtk.ResponseType.APPLY && clone_dialog.can_clone) { // Should not need second test?
+                    clone_dialog.cloning_in_progress = true;
                     var uri = clone_dialog.get_valid_source_repository_uri ();
                     var target = clone_dialog.get_valid_target ();
                     //TODO Show progress while cloning
@@ -1061,20 +1062,32 @@ namespace Scratch {
                         uri,
                         target,
                         (obj, res) => {
-                            try {
-                                File? workdir = null;
-                                if (git_manager.clone_repository.end (res, out workdir)) {
-                                    debug ("Repository cloned into %s", workdir.get_uri ());
-                                    open_folder (workdir);
-                                    clone_dialog.destroy ();
-                                }
-                            } catch (Error e) {
+                            clone_dialog.cloning_in_progress = false;
+                            File? workdir = null;
+                            string? error = null;
+                            if (git_manager.clone_repository.end (res, out workdir, out error)) {
+                                open_folder (workdir);
+                                clone_dialog.destroy ();
                                 var message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                                    "Uanble to clone %s".printf (uri),
-                                    e.message,
+                                    "Repository %s successfully cloned".printf (uri),
+                                    "Local repository working directory is %s".printf (workdir.get_uri ()),
+                                    "dialog-information",
+                                    Gtk.ButtonsType.CLOSE
+                                ) {
+                                    transient_for = this
+                                };
+                                message_dialog.response.connect (message_dialog.destroy);
+                                message_dialog.present ();
+                            } else {
+                                clone_dialog.hide ();
+                                var message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
+                                    "Unable to clone %s".printf (uri),
+                                    error,
                                     "dialog-error",
                                     Gtk.ButtonsType.CLOSE
-                                );
+                                ) {
+                                    transient_for = this
+                                };
                                 message_dialog.add_button (_("Retry"), 1);
                                 message_dialog.response.connect ((res) => {
                                     if (res == 1) {
@@ -1088,6 +1101,8 @@ namespace Scratch {
                             }
                         }
                     );
+                } else {
+                    clone_dialog.destroy ();
                 }
             });
 
