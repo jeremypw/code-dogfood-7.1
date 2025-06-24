@@ -6,45 +6,36 @@
  */
 
 public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
-    public bool can_clone { get; private set; default = false; }
-
-
     // Git project name rules according to GitLab
     // - Must start and end with a letter ( a-zA-Z ) or digit ( 0-9 ).
     // - Can contain only letters ( a-zA-Z ), digits ( 0-9 ), underscores ( _ ), dots ( . ), or dashes ( - ).
     // - Must not contain consecutive special characters.
     // - Cannot end in . git or . atom .
-    private const string CLONE_REPOSITORY = N_("Clone Button");
-    private const string CLONING = N_("Cloning…");
-
     private const string NAME_REGEX = """^[0-9a-zA-Z].([-_.]?[0-9a-zA-Z])*$"""; //TODO additional validation required
+
     private Regex name_regex;
     private Gtk.Label projects_folder_label;
     private Granite.ValidatedEntry remote_repository_uri_entry;
     private Granite.ValidatedEntry local_project_name_entry;
     private Gtk.Button clone_button;
+    private Gtk.Stack stack;
     private Gtk.Spinner spinner;
     private Gtk.Revealer revealer;
 
+    public bool can_clone { get; private set; default = false; }
     public string suggested_local_folder { get; construct; }
     public string suggested_remote { get; construct; }
 
     public bool cloning_in_progress {
         set {
             if (value) {
-                clone_button.label = _(CLONING);
+                stack.visible_child_name = "cloning";
                 spinner.start ();
 
             } else {
-                clone_button.label = _(CLONE_REPOSITORY);
+                stack.visible_child_name = "entries";
                 spinner.stop ();
             }
-
-            revealer.reveal_child = value;
-        }
-
-        get {
-            return revealer.reveal_child;
         }
     }
 
@@ -58,7 +49,16 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
     construct {
         transient_for = ((Gtk.Application)(GLib.Application.get_default ())).get_active_window ();
         image_icon = new ThemedIcon ("git");
+        badge_icon = new ThemedIcon ("emblem-downloads");
         modal = true;
+
+        ///TRANSLATORS "Git" is a proper name and must not be translated
+        primary_text = _("Create a local clone of a Git repository");
+        secondary_text = _("The source repository and local folder must exist and have the required read and write permissions");
+
+        var cancel_button = add_button (_("Cancel"), Gtk.ResponseType.CANCEL);
+        clone_button = (Gtk.Button)add_button (_("Clone Repository"), Gtk.ResponseType.APPLY);
+        set_default (clone_button);
 
         try {
             name_regex = new Regex (NAME_REGEX, OPTIMIZE, ANCHORED | NOTEMPTY);
@@ -66,16 +66,10 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
             warning ("%s\n", e.message);
         }
 
-        var cancel_button = add_button (_("Cancel"), Gtk.ResponseType.CANCEL);
-
-        ///TRANSLATORS "Git" is a proper name and must not be translated
-        primary_text = _("Create a local clone of a Git repository");
-        secondary_text = _("The source repository and local folder must exist and have the required read and write permissions");
-        badge_icon = new ThemedIcon ("emblem-downloads");
-
         remote_repository_uri_entry = new Granite.ValidatedEntry () {
             placeholder_text = _("https://example.com/username/projectname.git"),
-            input_purpose = URL
+            input_purpose = URL,
+            activates_default = true
         };
         remote_repository_uri_entry.changed.connect (on_remote_uri_changed);
         remote_repository_uri_entry.text = suggested_remote;
@@ -116,32 +110,37 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
 
         });
 
-        local_project_name_entry = new Granite.ValidatedEntry ();
-        local_project_name_entry.changed.connect (validate_local_name);
-
-        revealer = new Gtk.Revealer () {
-            valign = END
+        local_project_name_entry = new Granite.ValidatedEntry () {
+            activates_default = true
         };
-        spinner = new Gtk.Spinner ();
-        revealer.add (spinner);
+        local_project_name_entry.changed.connect (validate_local_name);
 
         var content_box = new Gtk.Grid ();
         content_box.attach (new CloneEntry (_("Repository URL"), remote_repository_uri_entry), 0, 0);
         content_box.attach (new CloneEntry (_("Location"), folder_chooser_button), 0, 1);
         content_box.attach (new CloneEntry (_("Name of Clone"), local_project_name_entry), 0, 2);
         content_box.attach (revealer, 1, 2);
-        content_box.show_all ();
 
-        custom_bin.add (content_box);
+        var cloning_box = new Gtk.Box (HORIZONTAL, 12) {
+            valign = CENTER,
+            halign = CENTER
+        };
+        var cloning_label = new Granite.HeaderLabel (_("Cloning in progress"));
+        spinner = new Gtk.Spinner ();
+        cloning_box.add (cloning_label);
+        cloning_box.add (spinner);
+
+        stack = new Gtk.Stack ();
+        stack.add_named (content_box, "entries");
+        stack.add_named (cloning_box, "cloning");
+        stack.visible_child_name = "entries";
+
+        custom_bin.add (stack);
         custom_bin.show_all ();
 
-        clone_button = new Gtk.Button.with_label (_(CLONE_REPOSITORY));
-        clone_button.show ();
-        add_action_widget (clone_button, Gtk.ResponseType.APPLY);
         bind_property ("can-clone", clone_button, "sensitive", DEFAULT | SYNC_CREATE);
-
-        //Do not want to connect to "is-valid" property notification as this gets changed to "true" every time the entry
-        //text changed. So call explicitly after we validate the text.
+        spinner.bind_property ("active", clone_button, "visible", INVERT_BOOLEAN);
+        spinner.bind_property ("active", cancel_button, "visible", INVERT_BOOLEAN);
         can_clone = false;
 
         // Focus cancel button so that entry placeholder text shows
@@ -176,7 +175,7 @@ public class Scratch.Dialogs.CloneRepositoryDialog : Granite.MessageDialog {
                     local_project_name_entry.is_valid &&
                     projects_folder_label.label != "";
 
-        //TODO Check whether the target folder already exists and is not empty?
+        // Checking whether the target folder already exists and is not empty occurs after pressing apply
     }
 
     private void on_remote_uri_changed (Gtk.Editable source) {
