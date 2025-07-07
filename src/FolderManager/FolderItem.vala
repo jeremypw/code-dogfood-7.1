@@ -24,6 +24,7 @@ namespace Scratch.FolderManager {
      * Monitored for changes inside the directory.
      */
     public class FolderItem : Item {
+        private const uint RENAME_AFTER_NEW_DELAY_MSEC = 500;
         private GLib.FileMonitor monitor;
         private bool children_loaded = false;
         private bool has_dummy;
@@ -34,6 +35,8 @@ namespace Scratch.FolderManager {
                 return !children_loaded && n_children <= 1 && file.children.size > 0;
             }
         }
+
+        public signal void children_finished_loading ();
 
         public FolderItem (File file, FileView view) {
             Object (file: file, view: view);
@@ -106,6 +109,8 @@ namespace Scratch.FolderManager {
             if (root != null) {
                 root.child_folder_loaded (this); //Updates child status emblens
             }
+
+            children_finished_loading ();
         }
 
         private void on_toggled () {
@@ -347,7 +352,7 @@ namespace Scratch.FolderManager {
                 has_dummy = false;
             }
 
-            ((Code.Widgets.SourceList.ExpandableItem)this).add (item);
+            base.add (item);
         }
 
         public new void remove (Code.Widgets.SourceList.Item item) {
@@ -421,7 +426,6 @@ namespace Scratch.FolderManager {
                         if (source.query_exists () == false) {
                             return;
                         }
-
                         var path_item = find_item_for_path (source.get_path ());
                         if (path_item == null) {
                             var file = new File (source.get_path ());
@@ -470,121 +474,146 @@ namespace Scratch.FolderManager {
             return null;
         }
 
-        public void on_add_new (bool is_folder, string? template_path = null) {
+        public void on_add_template (string template_path) {
+            // Expand folder before trying to copy template so that child appears for renaming
+            if (!expanded) {
+                expanded = true;  // causes async loading of children
+                ulong once = 0;
+                once = children_finished_loading.connect (() => {
+                    this.disconnect (once);
+                    copy_template (template_path);
+                });
+            } else {
+                copy_template (template_path);
+            }
+        }
+
+        private void copy_template (string template_path) {
             if (!file.is_executable) {
                 // This is necessary to avoid infinite loop below
                 warning ("Unable to open parent folder");
                 return;
             }
 
-            string name;
-            GLib.File template_file = GLib.File.new_for_path (template_path);
-            if (template_path == null) {
-                name = is_folder ? _("untitled folder") : _("new file");
-            } else {
-                ///TRANSLATORS %s is the placeholder for the path of a template file
-                name = template_file.get_basename ();
-            }
-
-            GLib.File new_file = file.file.get_child (name);
+            var template_file = GLib.File.new_for_path (template_path);
+            name = template_file.get_basename ();
+            var new_file = file.file.get_child (name);
             var n = 1;
-
             while (new_file.query_exists ()) {
                 new_file = file.file.get_child (("%s %d").printf (name, n));
                 n++;
             }
 
-            if (template_path != null) {
-                //Assume templates are small and can be copied without problems
-                try {
-                    template_file.copy (
-                        new_file,
-                        TARGET_DEFAULT_MODIFIED_TIME | TARGET_DEFAULT_PERMS | NOFOLLOW_SYMLINKS,
-                        null, //No cancellable
-                        null  //No progress
-                    );
-                } catch (Error e) {
-                    warning ("Error copying template %s", e.message);
-                    return;
-                }
+            name = new_file.get_basename ();
+
+            //Assume templates are small and can be copied without problems
+            try {
+                template_file.copy (
+                    new_file,
+                    TARGET_DEFAULT_MODIFIED_TIME | TARGET_DEFAULT_PERMS | NOFOLLOW_SYMLINKS,
+                    null, //No cancellable
+                    null  //No progress
+                );
+            } catch (Error e) {
+                warning ("Error copying template %s", e.message);
+                return;
             }
 
-            expanded = true;
-            if (template_file == null) {
-                var rename_item = new RenameItem (new_file.get_basename (), is_folder);
-                add (rename_item);
-                GLib.Idle.add (() => {
-                /* Start editing after finishing signal handler */
-                    if (view.start_editing_item (rename_item)) {
-                        ulong once = 0;
-                        once = rename_item.edited.connect (() => {
-                            rename_item.disconnect (once);
-                            // A name was accepted so create the corresponding file
-                            var new_name = rename_item.name;
-                            try {
-                                var gfile = file.file.get_child_for_display_name (new_name);
-                                if (is_folder) {
-                                    gfile.make_directory ();
-                                } else {
-                                    gfile.create (FileCreateFlags.NONE);
-                                    view.activate (gfile.get_path ());
-                                }
-                            } catch (Error e) {
-                                warning (e.message);
-                            }
-                        });
-
-                        /* Need to remove rename item even when editing cancelled so cannot use "edited" signal */
-                        Timeout.add (200, () => {
-                            if (view.editing) {
-                                return Source.CONTINUE;
-                            } else {
-                                remove (rename_item);
-                            }
-
-                            return Source.REMOVE;
-                        });
+            // Wait for monitor to pickup file creation and add new item
+            ulong once = 0;
+            once = child_added.connect (() => {
+                this.disconnect (once);
+                var path = new_file.get_path ();
+                // Still need to wait for sourcelist to become stable and editable
+                //TODO Find a better way
+                Timeout.add (RENAME_AFTER_NEW_DELAY_MSEC, () => {
+                    var rename_action = Utils.action_from_group (FileView.ACTION_RENAME_FILE, view.actions);
+                    if (rename_action != null && rename_action.enabled) {
+                        rename_action.activate (path);
                     } else {
-                        remove (rename_item);
+                        critical ("Rename action not available");
                     }
 
                     return Source.REMOVE;
                 });
-            } else {
-                Idle.add (() => {
-                    //TODO Should we open templates?  Select for now like new empty files.
-                    view.select_path (new_file.get_path ());
-                    return Source.REMOVE;
+            });
+        }
+
+        public void on_add_new (bool is_folder) {
+            if (!file.is_executable) {
+                // This is necessary to avoid infinite loop below
+                warning ("Unable to open parent folder");
+                return;
+            }
+
+
+            var name = is_folder ? _("untitled folder") : _("new file");
+            var new_file = file.file.get_child (name);
+            var n = 1;
+            while (new_file.query_exists ()) {
+                new_file = file.file.get_child (("%s %d").printf (name, n));
+                n++;
+            }
+
+            name = new_file.get_basename ();
+
+            // Expand folder before trying to rename
+            if (!expanded) {
+                ulong once = 0;
+                once = children_finished_loading.connect (() => {
+                    this.disconnect (once);
+                    rename_new (name, is_folder);
                 });
-            }
-        }
-    }
 
-    internal class RenameItem : Code.Widgets.SourceList.Item {
-        public bool is_folder { get; construct; }
-
-        public RenameItem (string path, bool is_folder) {
-            Object (
-                name: name,
-                is_folder: is_folder
-            );
-        }
-
-        construct {
-            editable = true;
-            edited.connect (on_edited);
-
-            if (is_folder) {
-                icon = GLib.ContentType.get_icon ("inode/directory");
+                expanded = true;  // causes async loading of children
             } else {
-                icon = GLib.ContentType.get_icon ("text");
+                rename_new (name, is_folder);
             }
         }
 
-        private void on_edited (string new_name) {
-            if (new_name != "") {
-                name = new_name;
-            }
+        private void rename_new (string name, bool is_folder) requires (!view.editing) {
+            var rename_item = new RenameItem (name, is_folder);
+            add (rename_item);
+
+            // Wait until can start editing
+            // For some reason using an Idle does not work properly here - the editable gets drawn in the wrong place
+            //TODO Find a way to detect when the sourcelist is stable and can be edited
+            Timeout.add (RENAME_AFTER_NEW_DELAY_MSEC, () => {
+                if (view.start_editing_item (rename_item)) {
+                    ulong once = 0;
+                    once = rename_item.edited.connect (() => {
+                        rename_item.disconnect (once);
+                        // A name was accepted so create the corresponding file
+                        var new_name = rename_item.name;
+                        try {
+                            var gfile = file.file.get_child_for_display_name (new_name);
+                            if (rename_item.is_folder) {
+                                gfile.make_directory ();
+                            } else {
+                                gfile.create (FileCreateFlags.NONE);
+                                view.activate (gfile.get_path ());
+                            }
+                        } catch (Error e) {
+                            warning (e.message);
+                        }
+                    });
+
+                    /* Need to remove rename item even when editing cancelled so cannot use "edited" signal */
+                    Timeout.add (200, () => {
+                        if (view.editing) {
+                            return Source.CONTINUE;
+                        } else {
+                            remove (rename_item);
+                            return Source.REMOVE;
+                        }
+                    });
+                } else {
+                    critical ("Failed to rename new item");
+                    remove (rename_item);
+                }
+
+                return Source.REMOVE;
+            });
         }
     }
 }

@@ -253,7 +253,6 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
         Code.Widgets.SourceList.ExpandableItem list,
         string path,
         bool expand = false) {
-
         foreach (var item in list.children) {
             if (item is Item) {
                 var code_item = (Item)item;
@@ -356,6 +355,7 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
         plugins.hook_folder_item_change (source, dest, event);
     }
 
+    // This only works when the list is stable (nothing being added, expanded etc)
     private void rename_file (string path) {
         this.select_path (path);
         if (this.start_editing_item (selected)) {
@@ -451,9 +451,10 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
 
     private void add_new_file (SimpleAction action, Variant? param) {
         // Using "path" of parent folder from params, call `on_add_new (false)` on `FolderItem`
-        var path = param.get_string ();
+        var path = param != null ? param.get_string () : null;
 
         if (path == null || path == "") {
+            critical ("No path");
             return;
         }
 
@@ -481,7 +482,7 @@ public class Scratch.FolderManager.FileView : Code.Widgets.SourceList, Code.Pane
             return;
         }
 
-        folder.on_add_new (false, template_path);
+        folder.on_add_template (template_path);
     }
 
     private void action_launch_app_with_file_path (SimpleAction action, Variant? param) {
